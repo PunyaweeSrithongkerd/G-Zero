@@ -28,7 +28,10 @@ class GameWindow(arcade.Window):
         self.world = World(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.hinu_sprite = ModelSprite('images/hinugundam.png',
                                        model=self.world.gundam)
+        self.enemy_sprite = ModelSprite('images/enemy.png',
+                                        model=self.world.enemy)
         self.hinu_sprite.set_position(300, 300)
+        self.enemy_sprite.set_position(600, 600)
 
     def on_key_press(self, key, key_modifiers):
         self.world.on_key_press(key, key_modifiers)
@@ -39,8 +42,8 @@ class GameWindow(arcade.Window):
     def on_draw(self):
         arcade.start_render()
         self.hinu_sprite.draw()
+        self.enemy_sprite.draw()
         
-
 
 def main():
     window = GameWindow(SCREEN_WIDTH, SCREEN_HEIGHT)

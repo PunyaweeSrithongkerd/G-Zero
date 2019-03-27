@@ -15,6 +15,7 @@ DIR_OFFSETS = {DIR_STILL: (0, 0),
                DIR_DOWN: (0, -1),
                DIR_LEFT: (-1, 0)}
 
+
 class Gundam:
     def __init__(self, world, x, y):
         self.world = world
@@ -31,11 +32,19 @@ class Gundam:
         self.move(self.direction)
 
 
+class Enemy:
+    def __init__(self, world, x, y):
+        self.world = world
+        self.x = x
+        self.y = y
+
+
 class World:
     def __init__(self, width, height):
         self.width = width
         self.height = height
-        self.gundam = Gundam(self, width // 2, height // 2)
+        self.gundam = Gundam(self, width // 8, height // 2)
+        self.enemy = Enemy(self, width -200, height // 2)
 
 
     def on_key_press(self, key, key_modifiers):
