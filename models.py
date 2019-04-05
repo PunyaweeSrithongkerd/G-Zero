@@ -15,6 +15,30 @@ DIR_OFFSETS = {DIR_STILL: (0, 0),
                DIR_DOWN: (0, -1),
                DIR_LEFT: (-1, 0)}
 
+class Interface:
+    def __init__(self,world):
+        self.map =  [ '####################',
+                     '#..................#',
+                     '#.###.###..###.###.#',
+                     '#.#...#......#...#.#',
+                     '#.#.###.####.###.#.#',
+                     '#.#.#..........#.#.#',
+                     '#.....###..###.....#',
+                     '#.#.#..........#.#.#',
+                     '#.#.###.####.###.#.#',
+                     '#.#...#......#...#.#',
+                     '#.###.###..###.###.#',
+                     '#..................#',
+                     '####################' ]
+        self.height = len(self.map)
+        self.width = len(self.map[0])
+        self.wall = []
+        for y in range(len(self.map)):
+            line = self.map[y]
+            for x in range(len(line)):
+                char = line[x]
+                if char == '#':
+                    self.wall.append([(x*40)+20,(y*40)+20])
 
 class Gundam:
     def __init__(self, world, x, y):
@@ -23,7 +47,6 @@ class Gundam:
         self.y = y
         self.direction = DIR_STILL
         self.gundam_center_x = 38
-
     def move(self, direction):
         self.x += MOVEMENT_SPEED * DIR_OFFSETS[direction][0]
         self.y += MOVEMENT_SPEED * DIR_OFFSETS[direction][1]
@@ -45,7 +68,7 @@ class World:
         self.height = height
         self.gundam = Gundam(self, width // 8, height // 2)
         self.enemy = Enemy(self, width -200, height // 2)
-
+        self.interface = Interface(self)
 
     def on_key_press(self, key, key_modifiers):
         if key == arcade.key.UP:
