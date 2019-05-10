@@ -112,7 +112,7 @@ class World:
         self.beam_hit = []
         self.width = width
         self.height = height
-        self.state = World.STATE_STARTED
+        self.state = World.STATE_DEAD
         self.interface = Interface(self)
         self.block_size = block_size
         self.gundam = Gundam(self, width // 8, height - 220,
@@ -215,6 +215,7 @@ class World:
         self.respawn_enemy_1()
         self.respawn_enemy_2()
         self.respawn_enemy_3()
+        self.respawn_enemy_4()
         self.bullet = 4
         self.gundam.x = 100
         self.gundam.y = 380

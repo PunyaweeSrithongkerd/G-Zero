@@ -13,10 +13,12 @@ INSTRUCTIONS_PAGE = 0
 GAME_RUNNING = 1
 GAME_OVER = 2
 
-# All Hi-Nu Gundam sprite from Super Robot Taisen D and sprite sheet from http://srw-shrine.tripod.com/id9.html
+# All Hi-Nu Gundam sprite rip from Super Robot Taisen D and sprite sheet from http://srw-shrine.tripod.com/id9.html
+# Enemy Sprite are rip from Super Robot Taisen J and sprite sheet from https://www.spriters-resource.com
 # Beam sound from Star Wars and download from https://www.soundboard.com/sb/sound/918041
 # Explosion sound from https://www.freesoundeffects.com
 # Background image from https://acregames.files.wordpress.com/2013/03/space-bg2.png
+# This Submit have some minor change to the game due a bug that found during presentation
 
 
 class ModelSprite(arcade.Sprite):
@@ -98,11 +100,12 @@ class GameWindow(arcade.Window):
     def on_key_press(self, key, key_modifiers):
         if self.current_state == INSTRUCTIONS_PAGE and key == arcade.key.Z:
             self.current_state = GAME_RUNNING
+            self.world.start()
         elif self.current_state == GAME_RUNNING:
             if not self.world.is_started():
                 self.world.start()
             self.world.on_key_press(key, key_modifiers)
-        elif self.current_state == GAME_OVER and key == arcade.key.SPACE:
+        elif self.current_state == GAME_OVER and key == arcade.key.R:
             self.restart_game()
 
     def on_key_release(self, key, key_modifiers):
@@ -118,8 +121,8 @@ class GameWindow(arcade.Window):
         output_1 = "Game Over"
         arcade.draw_text(output_1, 240, 400, FONT_COLOUR, 54)
 
-        output_2 = "Press SPACEBAR to restart"
-        arcade.draw_text(output_2, 230, 350, FONT_COLOUR, FONT_SIZE)
+        output_2 = "Press R to restart"
+        arcade.draw_text(output_2, 290, 350, FONT_COLOUR, FONT_SIZE)
 
         high_score = f'High Scores: {self.world.high_score}'
         arcade.draw_text(high_score, 290, 300, FONT_COLOUR, FONT_SIZE)
