@@ -21,9 +21,8 @@ KEY_MAP = {arcade.key.UP: DIR_UP,
 
 BLOCK_SIZE = 40
 BLOCK_CENTER = 20
-SCREEN_WIDTH = 800
+SCREEN_WIDTH_AND_WALL = 760
 ENEMY_START_X_POSITION = 750
-
 
 
 class Gundam:
@@ -68,7 +67,6 @@ class Gundam:
 
 
 class Enemy:
-
     def __init__(self, world, x, y):
         self.world = world
         self.x = x
@@ -107,54 +105,59 @@ class Interface:
 
 
 class World:
-    STATE_FROZEN = 1
-    STATE_STARTED = 2
-    STATE_DEAD = 3
+    STATE_STARTED = 1
+    STATE_DEAD = 2
 
     def __init__(self, width, height, block_size):
         self.beam_hit = []
         self.width = width
         self.height = height
-        self.state = World.STATE_FROZEN
+        self.state = World.STATE_STARTED
         self.interface = Interface(self)
         self.block_size = block_size
-        self.gundam = Gundam(self, width // 8, height // 2,
+        self.gundam = Gundam(self, width // 8, height - 220,
                              self.interface, self.block_size)
-        self.enemy1 = Enemy(self, ENEMY_START_X_POSITION, randint(266, 360))
-        self.enemy2 = Enemy(self, ENEMY_START_X_POSITION, randint(386, 480))
-        self.enemy3 = Enemy(self, ENEMY_START_X_POSITION, randint(506, 534))
+        self.enemy1 = Enemy(self, ENEMY_START_X_POSITION, randint(266, 333))
+        self.enemy2 = Enemy(self, ENEMY_START_X_POSITION, randint(334, 400))
+        self.enemy3 = Enemy(self, ENEMY_START_X_POSITION, randint(401, 467))
+        self.enemy4 = Enemy(self, ENEMY_START_X_POSITION, randint(468, 534))
         self.enemy_list = [self.enemy1,
                            self.enemy2,
-                           self.enemy3]
+                           self.enemy3,
+                           self.enemy4]
         self.score = 0
+        self.high_score = 0
         self.life_point = 1000
         self.hit_list = []
         self.beam_list = arcade.SpriteList()
         self.beam_sound = arcade.sound.load_sound('sounds/beam_rifle_sound.wav')
+        self.explosion_sound = arcade.load_sound('sounds/explosion.wav')
+        self.bullet = 4
 
     def start(self):
         self.state = World.STATE_STARTED
 
-    def freeze(self):
-        self.state = World.STATE_FROZEN
-
     def is_started(self):
         return self.state == World.STATE_STARTED
+
+    def create_beam(self):
+        arcade.sound.play_sound(self.beam_sound)
+        beam = arcade.Sprite("images/Beam shot.png")
+        beam_speed = 5
+        beam.angle = 180
+        beam.change_x = beam_speed
+        beam.set_position(self.gundam.x + 92,
+                          self.gundam.y)
+        self.beam_list.append(beam)
+        self.bullet -= 1
+        self.gundam.shoot = True
 
     def on_key_press(self, key, key_modifiers):
         if key in KEY_MAP:
             self.gundam.move_speed = 8
             self.gundam.next_direction = KEY_MAP[key]
-        if key == arcade.key.Z and len(self.beam_list) != 3:
-            arcade.sound.play_sound(self.beam_sound)
-            beam = arcade.Sprite("images/Beam shot.png")
-            beam_speed = 5
-            beam.angle = 180
-            beam.change_x = beam_speed
-            beam.set_position(self.gundam.x + 92,
-                              self.gundam.y)
-            self.beam_list.append(beam)
-            self.gundam.shoot = True
+        if key == arcade.key.Z and len(self.beam_list) != 4:
+            self.create_beam()
         else:
             self.gundam.shoot = False
             pass
@@ -169,7 +172,9 @@ class World:
                 check_player_hit(self.gundam.x, self.enemy2.x,
                                  self.gundam.y, self.enemy2.y),
                 check_player_hit(self.gundam.x, self.enemy3.x,
-                                 self.gundam.y, self.enemy3.y)]
+                                 self.gundam.y, self.enemy3.y),
+                check_player_hit(self.gundam.x, self.enemy4.x,
+                                 self.gundam.y, self.enemy4.y)]
 
     def die(self):
         self.state = World.STATE_DEAD
@@ -179,29 +184,42 @@ class World:
 
     def score_update(self):
         self.score += 10
+        if self.score >= self.high_score:
+            self.high_score = self.score
 
     def damage(self):
         self.life_point -= 100
 
+    def explode_enemy_and_update(self):
+        arcade.sound.play_sound(self.explosion_sound)
+        self.reload()
+        self.score_update()
+
     def respawn_enemy_1(self):
         self.enemy1.x = ENEMY_START_X_POSITION
-        self.enemy1.y = randint(266, 360)
+        self.enemy1.y = randint(266, 333)
 
     def respawn_enemy_2(self):
         self.enemy2.x = ENEMY_START_X_POSITION
-        self.enemy2.y = randint(386, 480)
+        self.enemy2.y = randint(334, 400)
 
     def respawn_enemy_3(self):
         self.enemy3.x = ENEMY_START_X_POSITION
-        self.enemy3.y = randint(506, 534)
+        self.enemy3.y = randint(401, 467)
+
+    def respawn_enemy_4(self):
+        self.enemy4.x = ENEMY_START_X_POSITION
+        self.enemy4.y = randint(468, 534)
 
     def restart(self):
         self.respawn_enemy_1()
         self.respawn_enemy_2()
         self.respawn_enemy_3()
+        self.bullet = 4
         self.gundam.x = 100
-        self.gundam.y = 300
+        self.gundam.y = 380
         self.beam_list = arcade.SpriteList()
+        self.state = World.STATE_STARTED
 
     def difficult_change(self):
         if self.score < 100:
@@ -217,36 +235,38 @@ class World:
             for enemy in self.enemy_list:
                 enemy.enemy_speed = 12
 
-    def update(self, delta):
-        if self.state in [World.STATE_FROZEN, World.STATE_DEAD]:
-            return
+    def reload(self):
+        self.bullet += 1
 
-        self.gundam.update(delta)
-        for enemy in self.enemy_list:
-            enemy.update(delta)
-
+    def beam_update(self):
         self.beam_list.update()
         for beam in self.beam_list:
-            if beam.left > SCREEN_WIDTH - 40:
+            if beam.left > SCREEN_WIDTH_AND_WALL:
                 beam.kill()
+                self.reload()
             if check_beam_hit(beam.center_x, self.enemy1.x,
                               beam.center_y, self.enemy1.y):
                 beam.kill()
+                self.explode_enemy_and_update()
                 self.respawn_enemy_1()
-                self.score_update()
+
             elif check_beam_hit(beam.center_x, self.enemy2.x,
                                 beam.center_y, self.enemy2.y):
                 beam.kill()
+                self.explode_enemy_and_update()
                 self.respawn_enemy_2()
-                self.score_update()
             elif check_beam_hit(beam.center_x, self.enemy3.x,
                                 beam.center_y, self.enemy3.y):
                 beam.kill()
+                self.explode_enemy_and_update()
                 self.respawn_enemy_3()
-                self.score_update()
+            elif check_beam_hit(beam.center_x, self.enemy4.x,
+                                beam.center_y, self.enemy4.y):
+                beam.kill()
+                self.explode_enemy_and_update()
+                self.respawn_enemy_4()
 
-        self.difficult_change()
-
+    def damage_check(self):
         if self.is_hit()[0]:
             self.respawn_enemy_1()
             self.damage()
@@ -256,6 +276,20 @@ class World:
         elif self.is_hit()[2]:
             self.respawn_enemy_3()
             self.damage()
+        elif self.is_hit()[3]:
+            self.respawn_enemy_4()
+            self.damage()
 
+    def update(self, delta):
+        if self.state is World.STATE_DEAD:
+            return
+
+        self.gundam.update(delta)
+        for enemy in self.enemy_list:
+            enemy.update(delta)
+        self.beam_update()
+        self.difficult_change()
+        self.damage_check()
         if self.life_point == 0:
             self.die()
+

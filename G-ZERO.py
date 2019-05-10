@@ -7,10 +7,16 @@ SCREEN_TITLE = "G-ZERO"
 BLOCK_SIZE = 40
 TEXT_X = 80
 TEXT_Y = 90
-FONT_SIZE = 20
+FONT_SIZE = 24
+FONT_COLOUR = arcade.color.WHITE
 INSTRUCTIONS_PAGE = 0
 GAME_RUNNING = 1
 GAME_OVER = 2
+
+# All Hi-Nu Gundam sprite from Super Robot Taisen D and sprite sheet from http://srw-shrine.tripod.com/id9.html
+# Beam sound from Star Wars and download from https://www.soundboard.com/sb/sound/918041
+# Explosion sound from https://www.freesoundeffects.com
+# Background image from https://acregames.files.wordpress.com/2013/03/space-bg2.png
 
 
 class ModelSprite(arcade.Sprite):
@@ -28,7 +34,7 @@ class ModelSprite(arcade.Sprite):
         super().draw()
 
 
-class InterfaceDrawer():
+class InterfaceDrawer:
     def __init__(self, interface):
         self.interface = interface
         self.width = self.interface.width
@@ -67,9 +73,12 @@ class GameWindow(arcade.Window):
                                          model=self.world.enemy2)
         self.enemy_sprite3 = ModelSprite('images/enemy.png',
                                          model=self.world.enemy3)
+        self.enemy_sprite4 = ModelSprite('images/enemy.png',
+                                         model=self.world.enemy4)
         self.enemy_pack = [self.enemy_sprite1,
                            self.enemy_sprite2,
-                           self.enemy_sprite3]
+                           self.enemy_sprite3,
+                           self.enemy_sprite4]
         self.wall = InterfaceDrawer(self.world.interface)
         self.background = arcade.Sprite('images/space_background.png')
         self.background.set_position(400, 300)
@@ -78,21 +87,23 @@ class GameWindow(arcade.Window):
         self.instructions.append(texture)
         self.current_state = INSTRUCTIONS_PAGE
 
+    def restart_game(self):
+        self.world.score = 0
+        self.world.life_point = 1000
+        self.world.restart()
+        self.current_state = GAME_RUNNING
+        self.hinu_sprite = ModelSprite('images/hinugundam.png',
+                                       model=self.world.gundam)
+
     def on_key_press(self, key, key_modifiers):
-        if self.current_state == INSTRUCTIONS_PAGE:
+        if self.current_state == INSTRUCTIONS_PAGE and key == arcade.key.Z:
             self.current_state = GAME_RUNNING
         elif self.current_state == GAME_RUNNING:
             if not self.world.is_started():
                 self.world.start()
-
             self.world.on_key_press(key, key_modifiers)
-        elif self.current_state == GAME_OVER:
-            self.world.score = 0
-            self.world.life_point = 1000
-            self.world.restart()
-            self.current_state = GAME_RUNNING
-            self.hinu_sprite = ModelSprite('images/hinugundam.png',
-                                           model=self.world.gundam)
+        elif self.current_state == GAME_OVER and key == arcade.key.SPACE:
+            self.restart_game()
 
     def on_key_release(self, key, key_modifiers):
         self.world.on_key_release(key, key_modifiers)
@@ -104,11 +115,28 @@ class GameWindow(arcade.Window):
                                       page_texture.height, page_texture, 0)
 
     def draw_game_over(self):
-        output = "Game Over"
-        arcade.draw_text(output, 240, 400, arcade.color.WHITE, 54)
+        output_1 = "Game Over"
+        arcade.draw_text(output_1, 240, 400, FONT_COLOUR, 54)
 
-        output = "Press Z to restart"
-        arcade.draw_text(output, 310, 300, arcade.color.WHITE, 24)
+        output_2 = "Press SPACEBAR to restart"
+        arcade.draw_text(output_2, 230, 350, FONT_COLOUR, FONT_SIZE)
+
+        high_score = f'High Scores: {self.world.high_score}'
+        arcade.draw_text(high_score, 290, 300, FONT_COLOUR, FONT_SIZE)
+
+        total_score = f"Total scores: {self.world.score}"
+        arcade.draw_text(total_score, 290, 270, FONT_COLOUR, FONT_SIZE)
+
+    def draw_report(self):
+        life = f"Life: {self.world.life_point}"
+        score = f"Score: {self.world.score}"
+        energy = f"Energy: {self.world.bullet}"
+        high_score = f'High Score: {self.world.high_score}'
+
+        arcade.draw_text(life, TEXT_X, TEXT_Y + 70, FONT_COLOUR, FONT_SIZE)
+        arcade.draw_text(energy, TEXT_X, TEXT_Y, FONT_COLOUR, FONT_SIZE)
+        arcade.draw_text(score, TEXT_X * 6, TEXT_Y, FONT_COLOUR, FONT_SIZE)
+        arcade.draw_text(high_score, TEXT_X * 6, TEXT_Y + 70, FONT_COLOUR, FONT_SIZE)
 
     def draw_game(self):
         self.background.draw()
@@ -117,21 +145,20 @@ class GameWindow(arcade.Window):
             self.enemy_pack[i].draw()
         self.wall.draw()
         self.hinu_sprite.draw()
-        life = f"Life: {self.world.life_point}"
-        output = f"Score: {self.world.score}"
-        arcade.draw_text(output, TEXT_X, TEXT_Y, arcade.color.WHITE, FONT_SIZE)
-        arcade.draw_text(life, TEXT_X, TEXT_Y + 70, arcade.color.WHITE, FONT_SIZE)
+        self.draw_report()
 
     def update(self, delta):
         self.world.update(delta)
         if self.world.gundam.shoot is True:
-            self.hinu_sprite = ModelSprite('images/hinu_gundam_shoot.png',
+            self.hinu_sprite = ModelSprite('images/hinugundam_shoot.png',
                                            model=self.world.gundam)
         else:
             self.hinu_sprite = ModelSprite('images/hinugundam.png',
                                            model=self.world.gundam)
         if self.world.life_point == 0:
             self.current_state = GAME_OVER
+            self.hinu_sprite = ModelSprite('images/hinugundam.png',
+                                           model=self.world.gundam)
 
     def on_draw(self):
         arcade.start_render()
@@ -143,7 +170,6 @@ class GameWindow(arcade.Window):
         else:
             self.draw_game()
             self.draw_game_over()
-
 
 
 def main():
